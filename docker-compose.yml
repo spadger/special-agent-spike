@@ -12,6 +12,8 @@ services:
       ID: app1
       SOURCE: topic-a
       DEST: topic-b
+    volumes:
+    - ./agent/agent1.props:/opt/application/agent/agent.props
 
   app2:
     build:
@@ -23,6 +25,8 @@ services:
       ID: app2
       SOURCE: topic-b
       DEST: topic-c
+    volumes:
+      - ./agent/agent2.props:/opt/application/agent/agent.props
 
 
   kafka:
