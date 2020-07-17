@@ -1,5 +1,0 @@
-tracer=jaeger
-jaeger.service_name=some_app
-jaeger.reporter_host=jaeger
-jaeger.reporter_port=5775
-JAEGER_SERVICE_NAME=app1

@@ -20,6 +20,7 @@ dependencies {
     implementation("ch.qos.logback", "logback-classic", "1.2.3")
     implementation("io.github.microutils", "kotlin-logging", "1.8.3")
     implementation("io.jaegertracing", "jaeger-client", "1.3.1")
+    implementation("io.opentracing.contrib", "opentracing-kafka-streams", "0.1.13")
 }
 
 val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
