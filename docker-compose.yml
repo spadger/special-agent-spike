@@ -12,6 +12,9 @@ services:
       ID: app1
       SOURCE: topic-a
       DEST: topic-b
+      JAVA_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    ports:
+      - 5005:5005
     volumes:
     - ./agent/agent1.props:/opt/application/agent/agent.props
 
@@ -26,6 +29,9 @@ services:
       ID: app2
       SOURCE: topic-b
       DEST: topic-c
+      JAVA_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006
+    ports:
+    - 5006:5006
     volumes:
       - ./agent/agent2.props:/opt/application/agent/agent.props
 

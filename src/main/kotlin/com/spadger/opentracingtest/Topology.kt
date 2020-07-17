@@ -5,6 +5,7 @@ import io.jaegertracing.Configuration.*
 import io.opentracing.Tracer
 import io.opentracing.contrib.kafka.streams.TracingKafkaClientSupplier
 import mu.KotlinLogging
+import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsConfig
@@ -14,7 +15,6 @@ import org.apache.kafka.streams.processor.Processor
 import org.apache.kafka.streams.processor.To
 import java.util.*
 import kotlin.random.Random
-
 
 private val logger = KotlinLogging.logger {}
 
@@ -27,19 +27,24 @@ class TestTopology(private val id: String, private val source: String, private v
         val topology = Topology()
             .addSource("source", source)
 
-           .addProcessor(
-                "processor-1",
-               { OpenTracingProcessor(TestProcessor1(id) as Processor<Any, Any>, tracer) },
+            .addProcessor(
+                "mark-up",
+                { MarkupProcessor(id, tracer) as Processor<Any, Any> },
                 arrayOf("source"))
+
+            .addProcessor(
+                "processor-1",
+                { OpenTracingProcessorDecorator(TestProcessor1(id) as Processor<Any, Any>, tracer) },
+                arrayOf("mark-up"))
 
            .addProcessor(
                 "processor-2",
-               { OpenTracingProcessor(TestProcessor2(id) as Processor<Any, Any>, tracer) },
+               { OpenTracingProcessorDecorator(TestProcessor2(id)  as Processor<Any,Any>, tracer) },
                 arrayOf("processor-1"))
 
            .addProcessor(
                 "processor-3",
-                { OpenTracingProcessor(TestProcessor3(id) as Processor<Any, Any>, tracer) },
+                { OpenTracingProcessorDecorator(TestProcessor3(id) as Processor<Any, Any>, tracer) },
                 arrayOf("processor-2"))
 
            .addSink("sink", dest, "processor-3")
@@ -92,6 +97,19 @@ abstract class TestProcessor(private val id: String, private val ordinal: Int): 
     }
 }
 
-class TestProcessor1(private val id: String) : TestProcessor(id, 1)
-class TestProcessor2(private val id: String) : TestProcessor(id, 2)
-class TestProcessor3(private val id: String) : TestProcessor(id, 3)
+class TestProcessor1(id: String) : TestProcessor(id, 1)
+class TestProcessor2(id: String) : TestProcessor(id, 2)
+class TestProcessor3(id: String) : TestProcessor(id, 3)
+
+class MarkupProcessor(private val id: String, tracer: Tracer) : OpenTracingAwareProcessor<String, String>(tracer){
+    override fun process(key: String, value: String) {
+        super.process(key, value)
+        if (id == "app1") {
+            val correlationId = UUID.randomUUID().toString()
+            logger.info("Setting correlationId to $correlationId")
+            super.setBaggeItem("correlationId", correlationId)
+        }
+
+        context().forward(key, value, To.all())
+    }
+}

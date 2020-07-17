@@ -19,7 +19,7 @@ private val logger = KotlinLogging.logger {}
 class OpenTracingProcessorContext(private val tracer: Tracer, private val processorName: String, private val inner: ProcessorContext):
     ProcessorContext {
 
-    private var span: Span? = null
+    public var span: Span? = null
     private var scope : Scope? = null
 
     companion object {
@@ -73,7 +73,10 @@ class OpenTracingProcessorContext(private val tracer: Tracer, private val proces
 
     override fun getStateStore(name: String?): StateStore = inner.getStateStore(name)
 
-    override fun commit() = inner.commit()
+    override fun commit() {
+        closeSpan()
+        inner.commit()
+    }
 
     override fun appConfigs(): MutableMap<String, Any> = inner.appConfigs()
 
