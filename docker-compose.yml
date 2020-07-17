@@ -21,6 +21,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - kafka
+      - app1
     environment:
       ID: app2
       SOURCE: topic-b
