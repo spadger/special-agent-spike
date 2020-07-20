@@ -10,7 +10,7 @@ The main aspect of development here is how it instruments individual processors.
 There are tow main ways of integrating: The decorator style and inheritance style, each with their own strengths:
 
 ## Decorator style
-For simple cases, the decorator style allows you to keep all of your processors unmodified, with integraiton being added in the topology definition.
+For simple cases, the decorator style allows you to keep all of your processors unmodified, with integration added in the topology definition.
 This approach allows your processors to inherit from any base-class.
 
 Ensure each processor supplier returns your processor decorated with the `OpenTracingProcessor`. The `OpenTracingProcessor` starts a new span as soon as `process(key, value)` is invoked, but also ensures a special `OpenTracingProcessorContext` is used.
@@ -39,14 +39,30 @@ with
    .addSink("sink", dest, "processor")
 ``` 
 
+n.b. if you need direct access to trace data, you can still achieve this using the `GlobalTracer`.  When you register your `Tracer`, add this line below
+```kotlin
+GlobalTracer.registerIfAbsent(tracer)
+```
+
+You will then be able to write trace data form your unmodified Processors:
+
+```kotlin
+GlobalTracer.get().scopeManager().activeSpan().setTag("z:some-key", "some-value")
+```
+
 ## Inheritance style
-If you need access to baggage, use the inheritor style. Your processor will need to inherit from `OpenTracingAwareProcessor`, and must call `super.process()`.  Afterward, you will get access to the baggage collection
+This style provides a slightly-easier to read topology, and simpler access to record Tags to your trace, but your processor will need to inherit from `OpenTracingAwareProcessor`, and must call `super.process()`.  
+Since there is no decoration, your topology will look unmodified.
 
 ```kotlin
 class SomeProcessor(tracer: Tracer) : OpenTracingAwareProcessor<String, String>(tracer){
     override fun process(key: String, value: String) {
-        super.process(key, value) //important
-        super.setBaggeItem("correlationId", UUID.randomUUID().toString())
+        
+        // Important, since this initialises the span
+        super.process(key, value)
+
+        // direct access to add tags from the Processor        
+        setTag("z:correlationId", UUID.randomUUID().toString())
 
         context().forward(key, value, To.all())
     }

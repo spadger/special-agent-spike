@@ -43,5 +43,7 @@ open class OpenTracingAwareProcessor<K, V>(private val tracer: Tracer) : Abstrac
         tracingProcessorContext.beginSpan()
     }
 
-    protected fun setBaggeItem(key: String, value: String) = tracingProcessorContext.span?.setBaggageItem(key, value)
+    protected fun setTag(key: String, value: String) = tracingProcessorContext.span?.setTag(key, value)
+    protected fun setTag(key: String, value: Boolean) = tracingProcessorContext.span?.setTag(key, value)
+    protected fun setTag(key: String, value: Number) = tracingProcessorContext.span?.setTag(key, value)
 }

@@ -1,6 +1,6 @@
 package com.spadger.opentracingtest
 
-object TraceBaggageKey {
-    const val CORRELATION_ID = "correlationId"
-    const val RECORD_ID = "recordId"
+object TraceKeys {
+    const val CORRELATION_ID = "zopa-correlation-id"
+    const val RECORD_ID = "zopa-record-id"
 }

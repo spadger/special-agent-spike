@@ -4,8 +4,8 @@ import io.jaegertracing.Configuration
 import io.jaegertracing.Configuration.*
 import io.opentracing.Tracer
 import io.opentracing.contrib.kafka.streams.TracingKafkaClientSupplier
+import io.opentracing.util.GlobalTracer
 import mu.KotlinLogging
-import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsConfig
@@ -13,6 +13,7 @@ import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.processor.AbstractProcessor
 import org.apache.kafka.streams.processor.Processor
 import org.apache.kafka.streams.processor.To
+import java.time.Instant
 import java.util.*
 import kotlin.random.Random
 
@@ -23,6 +24,7 @@ class TestTopology(private val id: String, private val source: String, private v
     fun start(){
 
         val tracer = getTracer(id)
+        GlobalTracer.registerIfAbsent(tracer)
 
         val topology = Topology()
             .addSource("source", source)
@@ -91,7 +93,8 @@ abstract class TestProcessor(private val id: String, private val ordinal: Int): 
     override fun process(key: String, value: String) {
         logger.info("Processor-$ordinal: $key")
 
-        Thread.sleep(Random.nextLong(150, 1500))
+        GlobalTracer.get().activeSpan().setTag("z:fsi-yoho", Instant.now().toString())
+        Thread.sleep(Random.nextLong(150, 1000))
 
         context().forward(key,  "$id-$ordinal - $value", To.all())
     }
@@ -104,10 +107,10 @@ class TestProcessor3(id: String) : TestProcessor(id, 3)
 class MarkupProcessor(private val id: String, tracer: Tracer) : OpenTracingAwareProcessor<String, String>(tracer){
     override fun process(key: String, value: String) {
         super.process(key, value)
-        if (id == "app1") {
+        if (id == "app1" || id == "local") {
             val correlationId = UUID.randomUUID().toString()
             logger.info("Setting correlationId to $correlationId")
-            super.setBaggeItem("correlationId", correlationId)
+            super.setTag("correlationId", correlationId)
         }
 
         context().forward(key, value, To.all())
